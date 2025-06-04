@@ -66,15 +66,18 @@ class DatabaseHelper {
     return await db.query(table, orderBy: '$columnScore DESC');
   }
 
-  // Método genérico para inserir dados (podes manter se for útil para outros fins)
-  Future<int> insert(Map<String, dynamic> row) async {
+  Future<Map<String, dynamic>?> queryUserByUsername(String username) async {
     Database db = await instance.database;
-    return await db.insert(table, row);
+    List<Map<String, dynamic>> users = await db.query(
+      table,
+      where: '$columnName = ?',
+      whereArgs: [username],
+      limit: 1,
+    );
+    if (users.isNotEmpty) {
+      return users.first;
+    }
+    return null;
   }
 
-  // Método genérico para consultar todos os dados (podes manter)
-  Future<List<Map<String, dynamic>>> queryAllRows() async {
-    Database db = await instance.database;
-    return await db.query(table);
-  }
 }

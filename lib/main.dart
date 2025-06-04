@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'ranking_screen.dart';
+import 'quiz_screen.dart';
+import 'login_screen.dart';
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,16 +18,41 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: HomeScreen(),
+      home: LoginScreen(),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
+  final String username;
+  final int score;
+
+  const HomeScreen({
+    super.key,
+    required this.username,
+    this.score = 0,
+  });
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('IPv4 Quiz Game'), centerTitle: true),
+      appBar: AppBar(
+        title: Text('IPv4 Quiz Game'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
