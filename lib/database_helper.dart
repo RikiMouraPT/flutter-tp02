@@ -78,4 +78,15 @@ class DatabaseHelper {
     }
     return null;
   }
+
+  //Método para atualizar o score de um utilizador
+  Future<int> updateUserScore(String username, int score) async {
+    Database db = await instance.database;
+    return await db.update(
+      table,
+      where: '$columnName = ?',
+      whereArgs: [username],
+      {columnScore: score},
+    );
+  }
 }

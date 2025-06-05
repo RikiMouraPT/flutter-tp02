@@ -38,7 +38,6 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('IPv4 Quiz Game'),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.person),
@@ -47,6 +46,16 @@ class HomeScreenState extends State<HomeScreen> {
               _showMessage(
                 context,
                 'Bem-vindo, ${widget.username}! O teu score atual é: ${widget.score}',
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.leaderboard),
+            tooltip: 'Ranking',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => RankingScreen()),
               );
             },
           ),
@@ -65,8 +74,12 @@ class HomeScreenState extends State<HomeScreen> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            AnimatedSwitcher(duration: Duration(seconds: 1)),
+            SizedBox(height: 40),
+            Icon(Icons.quiz_rounded, size: 100, color: Colors.blue.shade400),
+            SizedBox(height: 20),
             Text(
               'Escolha o nível de dificuldade',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -90,19 +103,6 @@ class HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(height: 20),
             _buildLevelButton(context, 'Nível 3', 'Super-redes', Colors.red, 3),
-            SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RankingScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              ),
-              child: Text('Ver Ranking'),
-            ),
           ],
         ),
       ),
@@ -122,7 +122,12 @@ class HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => QuizScreen(level: level)),
+            MaterialPageRoute(
+              builder: (context) => QuizScreen(
+                level: level,
+                username: widget.username,
+              ),
+            ),
           );
         },
         style: ElevatedButton.styleFrom(
