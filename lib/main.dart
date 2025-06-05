@@ -4,35 +4,34 @@ import 'quiz_screen.dart';
 import 'login_screen.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'IPv4 Quiz Game',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: LoginScreen(),
-    );
+    return MaterialApp(title: 'IPv4 Quiz Game', home: LoginScreen());
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final String username;
   final int score;
 
-  const HomeScreen({
-    super.key,
-    required this.username,
-    this.score = 0,
-  });
-  
+  const HomeScreen({super.key, required this.username, required this.score});
+
+  @override
+  HomeScreenState createState() => HomeScreenState();
+}
+
+class HomeScreenState extends State<HomeScreen> {
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.blue),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +40,16 @@ class HomeScreen extends StatelessWidget {
         title: Text('IPv4 Quiz Game'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: Icon(Icons.person),
+            tooltip: 'Perfil',
+            onPressed: () {
+              _showMessage(
+                context,
+                'Bem-vindo, ${widget.username}! O teu score atual é: ${widget.score}',
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.logout),
             tooltip: 'Logout',
@@ -89,10 +98,10 @@ class HomeScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => RankingScreen()),
                 );
               },
-              child: Text('Ver Ranking'),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               ),
+              child: Text('Ver Ranking'),
             ),
           ],
         ),
@@ -107,7 +116,7 @@ class HomeScreen extends StatelessWidget {
     Color color,
     int level,
   ) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
@@ -116,6 +125,10 @@ class HomeScreen extends StatelessWidget {
             MaterialPageRoute(builder: (context) => QuizScreen(level: level)),
           );
         },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+        ),
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
           child: Column(
@@ -129,12 +142,7 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-        ),
       ),
     );
   }
 }
-

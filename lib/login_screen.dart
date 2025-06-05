@@ -6,12 +6,11 @@ import 'database_helper.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
-  
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  LoginScreenState createState() => LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -26,12 +25,12 @@ class _LoginScreenState extends State<LoginScreen> {
       _showMessage('Por favor, preencha todos os campos');
       return;
     }
-    //Username and password from database
-
+    // Check if user exists
     Map<String, dynamic>? user = await dbHelper.queryUserByUsername(username);
 
     if (user != null ) {
       if (user['password'] == password) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -45,14 +44,14 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } else {
       // Register new user
-      dbHelper.registerUser(username, password);
+      if (!mounted) return;
       Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => HomeScreen(username: username, score: 0),
           ),
         );
-      _showMessage('Usuário registrado com sucesso!');
+      _showMessage('User registado com sucesso!');
     }
   }
 
@@ -69,23 +68,40 @@ class _LoginScreenState extends State<LoginScreen> {
         title: Text('IPv4 Quiz Game'),
         centerTitle: true,
         actions: [
-          TextButton(
+          IconButton(
+            icon: Icon(Icons.leaderboard),
+            tooltip: 'Ranking',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => RankingScreen()),
               );
             },
-            child: Text('Ranking', style: TextStyle(color: Colors.yellow.shade900)),
+          ),
+          IconButton(
+            icon: Icon(Icons.info_outline),
+            tooltip: 'Sobre',
+            onPressed: () {
+              showAboutDialog(
+                context: context,
+                applicationName: 'IPv4 Quiz Game',
+                applicationVersion: '1.0.0',
+                applicationIcon: Icon(Icons.network_check_rounded, size: 50, color: Colors.blue),
+                children: [
+                  Text('Desenvolvido por Ricardo Moura e Vitor Rocha'),
+                ],
+              );
+            },
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Icon(Icons.network_check, size: 80, color: Colors.blue),
+            SizedBox(height: 40),
+            Icon(Icons.network_check_rounded, size: 100, color: Colors.blue),
             SizedBox(height: 20),
             Text(
               'Bem-vindo ao IPv4 Quiz',

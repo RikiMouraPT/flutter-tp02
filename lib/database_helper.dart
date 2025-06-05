@@ -3,7 +3,7 @@ import 'package:path/path.dart';
 
 class DatabaseHelper {
   static final _databaseName = "tp02sqlite.db";
-  static final _databaseVersion = 1; // Se alterares o schema, incrementa a versão.
+  static final _databaseVersion = 1;
   static final table = 'Users';
   static final columnId = 'id';
   static final columnName = 'nome';
@@ -25,20 +25,19 @@ class DatabaseHelper {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
-      // onUpgrade: _onUpgrade, // Necessário se precisares de migrações de schema
     );
   }
 
   // SQL para criar a tabela (se não existir)
   Future _onCreate(Database db, int version) async {
     await db.execute('''
- CREATE TABLE $table (
- $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
- $columnName TEXT NOT NULL UNIQUE,
- $columnPassword TEXT NOT NULL, -- Em produção, armazena passwords com hash!
- $columnScore INTEGER DEFAULT 0
- )
- ''');
+      CREATE TABLE $table (
+      $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+      $columnName TEXT NOT NULL UNIQUE,
+      $columnPassword TEXT NOT NULL, -- Em produção, armazena passwords com hash!
+      $columnScore INTEGER DEFAULT 0
+      )
+      ''');
   }
 
   // --- MÉTODOS CRUD ---
@@ -55,7 +54,6 @@ class DatabaseHelper {
       });
     } catch (e) {
       // Ex: Username já existe devido à constraint UNIQUE
-      print('Erro ao registar utilizador: $e');
       return null;
     }
   }
@@ -66,6 +64,7 @@ class DatabaseHelper {
     return await db.query(table, orderBy: '$columnScore DESC');
   }
 
+  // Método para consultar um utilizador pelo nome de utilizador para usar no login
   Future<Map<String, dynamic>?> queryUserByUsername(String username) async {
     Database db = await instance.database;
     List<Map<String, dynamic>> users = await db.query(
@@ -79,5 +78,4 @@ class DatabaseHelper {
     }
     return null;
   }
-
 }
