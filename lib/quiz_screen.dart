@@ -5,12 +5,9 @@ import 'database_helper.dart';
 class QuizScreen extends StatefulWidget {
   final int level;
   final String username;
+  final List<Question> questions;
 
-  const QuizScreen({
-    super.key,
-    required this.level,
-    required this.username,
-  });
+  const QuizScreen({super.key, required this.level, required this.username, required this.questions});
 
   @override
   QuizScreenState createState() => QuizScreenState();
@@ -21,35 +18,7 @@ class QuizScreenState extends State<QuizScreen> {
 
   int userScore = 0;
   int tempScore = 0;
-  List<Question> questions = [
-    Question(
-      text: 'Qual é o endereço IPv4 padrão para uma rede local?',
-      options: [
-        Options(text: '192.168.0.1', isCorrect: true),
-        Options(text: '10.0.0.1', isCorrect: false),
-        Options(text: '127.0.0.1', isCorrect: false),
-        Options(text: '255.255.255.0', isCorrect: false),
-      ],
-    ),
-    Question(
-      text: 'Qual é a máscara de sub-rede padrão para uma rede Classe C?',
-      options: [
-        Options(text: '255.255.255.0', isCorrect: true),
-        Options(text: '255.255.0.0', isCorrect: false),
-        Options(text: '255.0.0.0', isCorrect: false),
-        Options(text: '255.255.255.255', isCorrect: false),
-      ],
-    ),
-    Question(
-      text: 'Qual porta é usada pelo protocolo HTTP?',
-      options: [
-        Options(text: '80', isCorrect: true),
-        Options(text: '443', isCorrect: false),
-        Options(text: '21', isCorrect: false),
-        Options(text: '25', isCorrect: false),
-      ],
-    ),
-  ];
+  late List<Question> questions;
   int currentQuestionIndex = 0;
   late Question currentQuestion;
   bool showResult = false;
@@ -174,6 +143,7 @@ class QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
+    questions = widget.questions;
     currentQuestion = questions[0];
     _getCurrentUserScore();
   }
@@ -186,7 +156,7 @@ class QuizScreenState extends State<QuizScreen> {
       });
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -277,14 +247,14 @@ class QuizScreenState extends State<QuizScreen> {
 
 class Question {
   final String text;
-  final List<Options> options;
+  final List<Option> options;
 
   Question({required this.text, required this.options});
 }
 
-class Options {
+class Option {
   final String text;
   final bool isCorrect;
 
-  Options({required this.text, required this.isCorrect});
+  Option({required this.text, required this.isCorrect});
 }
