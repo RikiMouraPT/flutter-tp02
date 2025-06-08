@@ -32,19 +32,19 @@ class QuizScreenState extends State<QuizScreen> {
 
       if (currentQuestion.options[option].isCorrect) {
         if (widget.level == 1) {
-          tempScore += 10;
+          tempScore = max(tempScore + 10, 0);
         } else if (widget.level == 2) {
-          tempScore += 20;
+          tempScore = max(tempScore + 20, 0);
         } else if (widget.level == 3) {
-          tempScore += 30;
+          tempScore = max(tempScore + 30, 0);
         }
-      } else {
+            } else {
         if (widget.level == 1) {
-          tempScore -= 5;
+          tempScore = max(tempScore - 5, 0);
         } else if (widget.level == 2) {
-          tempScore -= 10;
+          tempScore = max(tempScore - 10, 0);
         } else if (widget.level == 3) {
-          tempScore -= 15;
+          tempScore = max(tempScore - 15, 0);
         }
       }
     });
@@ -120,10 +120,10 @@ class QuizScreenState extends State<QuizScreen> {
               SizedBox(height: 20),
               LinearProgressIndicator(
                 value: widget.level == 1
-                    ? tempScore / 50
+                    ? tempScore / 30
                     : widget.level == 2
-                    ? tempScore / 100
-                    : tempScore / 150,
+                    ? tempScore / 60
+                    : tempScore / 90,
                 minHeight: 8,
                 backgroundColor: Colors.grey.shade300,
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
