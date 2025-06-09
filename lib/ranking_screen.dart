@@ -15,10 +15,10 @@ class RankingScreenState extends State<RankingScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRankingData();
+    loadRankingData();
   }
 
-  void _loadRankingData() async {
+  void loadRankingData() async {
     List<Map<String, dynamic>> allRows = await dbHelper.queryAllRowsOrderedByScore();
     setState(() {
       rankingData = allRows;
@@ -35,7 +35,7 @@ class RankingScreenState extends State<RankingScreen> {
             icon: Icon(Icons.refresh),
             tooltip: 'Refresh Ranking',
             onPressed: () {
-              _loadRankingData();
+              loadRankingData();
             },
           ),
         ],

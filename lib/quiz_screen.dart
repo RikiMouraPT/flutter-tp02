@@ -79,7 +79,6 @@ class QuizScreenState extends State<QuizScreen> {
           Navigator.pop(context); // Volta para o menu
         });
 
-        //FIX: Ajustar progress bar para aceitar nivel de dificuldade
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),

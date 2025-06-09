@@ -44,6 +44,7 @@ class LoginScreenState extends State<LoginScreen> {
       }
     } else {
       // Register new user
+      await dbHelper.registerUser(username, password);
       if (!mounted) return;
       Navigator.pushReplacement(
           context,

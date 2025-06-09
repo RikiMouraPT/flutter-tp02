@@ -3,6 +3,7 @@ import 'ranking_screen.dart';
 import 'quiz_screen.dart';
 import 'login_screen.dart';
 import 'dart:math';
+import 'database_helper.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,6 +29,18 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
+  final dbHelper = DatabaseHelper.instance;
+  Map<String, dynamic> user = {};
+
+  Future<void> loadRankingData() async {
+    Map<String, dynamic>? userData = await dbHelper.queryUserByUsername(widget.username);
+    setState(() {
+      if (userData != null) {
+        user = userData;
+      }
+    });
+  }
+
   void _showMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.blue),
@@ -89,7 +102,7 @@ class HomeScreenState extends State<HomeScreen> {
   String getCompatibleSuperMask(String ip) {
     Random rand = Random();
     // Máscaras válidas para super-redes (prefixos menores, ou seja, menos bits a 1)
-    List<int> validMasks = [128, 192, 224, 240, 248, 252, 254, 255];
+    List<int> validMasks = [128, 192, 224, 240, 248, 252, 254];
 
     if (ip.startsWith('10.')) {
       int maskValue = validMasks[rand.nextInt(validMasks.length)];
@@ -98,12 +111,11 @@ class HomeScreenState extends State<HomeScreen> {
       int maskValue = validMasks[rand.nextInt(validMasks.length)];
       return '255.$maskValue.0.0';
     } else if (ip.startsWith('192.168.')) {
-      // Para super-redes de 192.168.0.0/16, o quarto octeto é o mais viável
       int maskValue = validMasks[rand.nextInt(validMasks.length)];
       return '255.255.$maskValue.0';
     } else {
       int maskValue = validMasks[rand.nextInt(validMasks.length)];
-      return '255.255.255.$maskValue';
+      return '255.255.$maskValue.0';
     }
   }
 
@@ -129,24 +141,36 @@ class HomeScreenState extends State<HomeScreen> {
     return broadcastParts.join('.');
   }
 
-  List<Option> generateOptionsNetworkId(String correctNetworkId) {
+  List<Option> generateOptionsNetworkId(String correctNetworkId, int level) {
     final rand = Random();
     List<Option> optionsSet = [Option(text: correctNetworkId, isCorrect: true)];
 
-    // Lista de Network IDs possíveis
-    Set<String> possibleNetworkIdsSet = {
-      '10.0.0.0',
-      '172.16.0.0',
-      '192.168.0.0',
-    };
+    if(level == 1) {
+      // Lista de Network IDs possíveis
+      Set<String> possibleNetworkIdsSet = {
+        '10.0.0.0',
+        '172.16.0.0',
+        '192.168.0.0',
+      };
+      possibleNetworkIdsSet.remove(correctNetworkId);
+      List<String> possibleNetworkIds = possibleNetworkIdsSet.toList();
 
-    possibleNetworkIdsSet.remove(correctNetworkId);
-
-    List<String> possibleNetworkIds = possibleNetworkIdsSet.toList();
-
-    // Adicionar os restantes Network IDs como opções incorretas
-    for (int i = 0; i < possibleNetworkIds.length; i++) {
-      optionsSet.add(Option(text: possibleNetworkIds[i], isCorrect: false));
+      // Adicionar os restantes Network IDs como opções incorretas
+      for (int i = 0; i < possibleNetworkIds.length; i++) {
+        optionsSet.add(Option(text: possibleNetworkIds[i], isCorrect: false));
+      }
+    }
+    else 
+    {
+      for (int i = 0; i < 3; i++) {
+        // Gera Network IDs aleatórios
+        String randomIP = generatePrivateIP();
+        String randomMask = level == 2
+            ? getCompatibleSubMask(randomIP)
+            : getCompatibleSuperMask(randomIP);
+        String randomNetworkId = calculateNetworkId(randomIP, randomMask);
+        optionsSet.add(Option(text: randomNetworkId, isCorrect: false));
+      }
     }
 
     // Baralha todas as opções para que a correta não seja sempre a primeira
@@ -171,223 +195,91 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   bool sameSubnet(String ip1, String ip2, String mask) {
-    List<int> ip1Parts = ip1.split('.').map(int.parse).toList();
-    List<int> ip2Parts = ip2.split('.').map(int.parse).toList();
-    List<int> maskParts = mask.split('.').map(int.parse).toList();
+    String networkId1 = calculateNetworkId(ip1, mask);
+    String networkId2 = calculateNetworkId(ip2, mask);
 
-    for (int i = 0; i < 4; i++) {
-      if ((ip1Parts[i] & maskParts[i]) != (ip2Parts[i] & maskParts[i])) {
-        return false;
-      }
+    if (networkId1 == networkId2) {
+      return true;
     }
-    return true;
+    return false;
   }
 
   // Method to generate a question
   List<Question> _generateQuestions(int level) {
     List<Question> questions = [];
-    switch (level) {
-      case 1:
-        Question firstQuestion = _firstQuestion(level);
-        Question secondQuestion = _secondQuestion(level);
-        Question thirdQuestion = _thirdQuestion(level);
 
-        questions.add(firstQuestion);
-        questions.add(secondQuestion);
-        questions.add(thirdQuestion);
-        return questions;
-      case 2:
-        Question firstQuestionLevel2 = _firstQuestion(level);
-        Question secondQuestionLevel2 = _secondQuestion(level);
-        Question thirdQuestionLevel2 = _thirdQuestion(level);
-
-        questions.add(firstQuestionLevel2);
-        questions.add(secondQuestionLevel2);
-        questions.add(thirdQuestionLevel2);
-        return questions;
-      case 3:
-        Question firstQuestionLevel3 = _firstQuestion(level);
-        Question secondQuestionLevel3 = _secondQuestion(level);
-        Question thirdQuestionLevel3 = _thirdQuestion(level);
-
-        questions.add(firstQuestionLevel3);
-        questions.add(secondQuestionLevel3);
-        questions.add(thirdQuestionLevel3);
-        return questions;
-      default:
-        return [];
-    }
+    questions.add(_firstQuestion(level));
+    questions.add(_secondQuestion(level));
+    questions.add(_thirdQuestion(level));
+    
+    return questions;
   }
 
   //Metodo para questão de Network ID
   Question _firstQuestion(int level) {
-    Question question = Question(text: '', options: []);
+    String ip = generatePrivateIP();
 
-    if (level == 1) {
-      String ip = generatePrivateIP();
-      String mask = getCompatibleMask(ip);
-      String networkId = calculateNetworkId(ip, mask);
-      List<Option> options = generateOptionsNetworkId(networkId);
+    String mask = level == 1
+        ? getCompatibleMask(ip)
+        : level == 2
+        ? getCompatibleSubMask(ip)
+        : getCompatibleSuperMask(ip);
 
-      String text =
-          'Qual é o Network ID do endereço IP $ip com máscara de sub-rede $mask?';
-      question = Question(text: text, options: options);
-    } else if (level == 2) {
-      String ip1 = generatePrivateIP();
-      String mask = getCompatibleSubMask(ip1);
-      String networkId = calculateNetworkId(ip1, mask);
+    String networkId = calculateNetworkId(ip, mask);
 
-      List<Option> options = generateOptionsNetworkId(networkId);
+    List<Option> options = generateOptionsNetworkId(networkId, level);
 
-      String text =
-          'Qual é o Network ID do endereço IP $ip1 com máscara de sub-rede $mask?';
-      question = Question(text: text, options: options);
-    } else if (level == 3) {
-      String ip1 = generatePrivateIP();
-      String mask = getCompatibleSuperMask(ip1);
-      String networkId = calculateNetworkId(ip1, mask);
+    String text =
+        'Qual é o Network ID do endereço IP $ip com máscara de sub-rede $mask?';
 
-      List<Option> options = generateOptionsNetworkId(networkId);
-
-      String text =
-          'Qual é o Network ID do endereço IP $ip1 com máscara de super-rede $mask?';
-      question = Question(text: text, options: options);
-    }
-    return question;
+    return Question(text: text, options: options);
   }
 
   //Metodo para questão de Broadcast Address
   Question _secondQuestion(int level) {
-    Question question = Question(text: '', options: []);
+    String ip = generatePrivateIP();
 
-    if (level == 1) {
-      String ip = generatePrivateIP();
-      String mask = getCompatibleMask(ip);
-      String networkId = calculateNetworkId(ip, mask);
+    String mask = level == 1
+        ? getCompatibleMask(ip)
+        : level == 2
+        ? getCompatibleSubMask(ip)
+        : getCompatibleSuperMask(ip);
 
-      // Calcular o Broadcast Address
-      List<int> networkParts = networkId.split('.').map(int.parse).toList();
-      List<int> maskParts = mask.split('.').map(int.parse).toList();
+    String networkId = calculateNetworkId(ip, mask);
 
-      List<int> broadcastParts = List.generate(
-        4,
-        (i) => networkParts[i] | ~maskParts[i] & 255,
-      );
+    String broadcastAddress = calculateBrodcastIp(networkId, mask);
 
-      String broadcastAddress = broadcastParts.join('.');
+    List<Option> options = generateOptionsBroadcastIP(broadcastAddress);
 
-      List<Option> options = generateOptionsBroadcastIP(broadcastAddress);
+    String text =
+        'Qual é o Broadcast Address do endereço IP $ip com máscara de sub-rede $mask?';
 
-      String text =
-          'Qual é o Broadcast Address do endereço IP $ip com máscara de sub-rede $mask?';
-      question = Question(text: text, options: options);
-    }
-    else if (level == 2) {
-      String ip1 = generatePrivateIP();
-      String mask = getCompatibleSubMask(ip1);
-      String networkId = calculateNetworkId(ip1, mask);
-
-      List<int> networkParts = networkId.split('.').map(int.parse).toList();
-      List<int> maskParts = mask.split('.').map(int.parse).toList();
-
-      List<int> broadcastParts = List.generate(
-        4,
-        (i) => networkParts[i] | ~maskParts[i] & 255,
-      );
-
-      String broadcastAddress = broadcastParts.join('.');
-
-      List<Option> options = generateOptionsBroadcastIP(broadcastAddress);
-
-      String text =
-          'Qual é o Broadcast Address do endereço IP $ip1 com máscara de sub-rede $mask?';
-      question = Question(text: text, options: options);
-    }
-    else if (level == 3) {
-      String ip1 = generatePrivateIP();
-      String mask = getCompatibleSuperMask(ip1);
-      String networkId = calculateNetworkId(ip1, mask);
-
-      List<int> networkParts = networkId.split('.').map(int.parse).toList();
-      List<int> maskParts = mask.split('.').map(int.parse).toList();
-
-      List<int> broadcastParts = List.generate(
-        4,
-        (i) => networkParts[i] | ~maskParts[i] & 255,
-      );
-
-      String broadcastAddress = broadcastParts.join('.');
-
-      List<Option> options = generateOptionsBroadcastIP(broadcastAddress);
-
-      String text =
-          'Qual é o Broadcast Address do endereço IP $ip1 com máscara de super-rede $mask?';
-      question = Question(text: text, options: options);
-    }
-
-
-    return question;
+    return Question(text: text, options: options);
   }
 
   //Metodo para questão de Subnet Mask
   Question _thirdQuestion(int level) {
-    Question question = Question(text: '', options: []);
+    String ip1 = generatePrivateIP();
+    String ip2 = generatePrivateIP();
 
-    if (level == 1)
-    {
-      String ip1 = generatePrivateIP();
-      String ip2 = generatePrivateIP();
-      String mask = getCompatibleMask(ip1);
-      bool isSameSubnet = sameSubnet(ip1, ip2, mask);
+    String mask = level == 1
+        ? getCompatibleMask(ip1)
+        : level == 2
+        ? getCompatibleSubMask(ip1)
+        : getCompatibleSuperMask(ip1);
 
-      List<Option> options = [
-        Option(text: isSameSubnet ? 'Sim' : 'Não', isCorrect: true),
-        Option(text: isSameSubnet ? 'Não' : 'Sim', isCorrect: false),
-      ];
+    bool isSame = sameSubnet(ip1, ip2, mask);
 
-      String text =
-          'Os endereços IP $ip1 e $ip2 estão no mesmo segmento de rede com máscara de sub-rede $mask?';
-      question = Question(text: text, options: options);
+    String text =
+        'Os endereços IP $ip1 e $ip2 estão no mesmo segmento de rede com máscara de sub-rede $mask?';
 
-      return question;
-    }
-    else if (level == 2) {
-      String ip1 = generatePrivateIP();
-      String ip2 = generatePrivateIP();
-      String mask = getCompatibleSubMask(ip1);
-      bool isSameSubnet = sameSubnet(ip1, ip2, mask);
-
-      List<Option> options = [
-        Option(text: isSameSubnet ? 'Sim' : 'Não', isCorrect: true),
-        Option(text: isSameSubnet ? 'Não' : 'Sim', isCorrect: false),
-      ];
-
-      String text =
-          'Os endereços IP $ip1 e $ip2 estão no mesmo segmento de rede com máscara de sub-rede $mask?';
-      question = Question(text: text, options: options);
-
-      return question;
-    }
-    else if (level == 3) {
-      String ip1 = generatePrivateIP();
-      String ip2 = generatePrivateIP();
-      String mask = getCompatibleSuperMask(ip1);
-      bool isSameSubnet = sameSubnet(ip1, ip2, mask);
-
-      List<Option> options = [
-        Option(text: isSameSubnet ? 'Sim' : 'Não', isCorrect: true),
-        Option(text: isSameSubnet ? 'Não' : 'Sim', isCorrect: false),
-      ];
-
-      String text =
-          'Os endereços IP $ip1 e $ip2 estão no mesmo segmento de rede com máscara de super-rede $mask?';
-      question = Question(text: text, options: options);
-
-      return question;
-    }
-
-
-    return question;
+    return Question(
+      text: text,
+      options: [
+        Option(text: isSame ? 'Sim' : 'Não', isCorrect: true),
+        Option(text: isSame ? 'Não' : 'Sim', isCorrect: false),
+      ],
+    );
   }
 
   @override
@@ -396,13 +288,14 @@ class HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text('IPv4 Quiz Game'),
         actions: [
-          IconButton(
+            IconButton(
             icon: Icon(Icons.person),
             tooltip: 'Perfil',
-            onPressed: () {
+            onPressed: () async {
+              await loadRankingData();
               _showMessage(
                 context,
-                'Bem-vindo, ${widget.username}! O teu score atual é: ${widget.score}',
+                'Bem-vindo, ${widget.username}! O teu score atual é: ${user['score']}',
               );
             },
           ),
