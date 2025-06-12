@@ -78,7 +78,7 @@ class HomeScreenState extends State<HomeScreen> {
   String getCompatibleSubMask(String ip) {
     Random rand = Random();
     // Máscaras válidas para cada octeto
-    List<int> validMasks = [0, 128, 192, 224, 240, 248, 252, 254, 255];
+    List<int> validMasks = [128, 192, 224, 240, 248, 252, 254, 255];
 
     if (ip.startsWith('10.')) {
       // /8
